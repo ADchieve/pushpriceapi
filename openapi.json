@@ -187,7 +187,7 @@
       },
       "HotelFeed": {
         "type": "object",
-        "description": "CSV / XML feed example columns for hotels",
+        "description": "CSV / XML feed example columns for hotels. [CSV example](https://raw.githubusercontent.com/ADchieve/pushpriceapi/refs/heads/main/Hotel%20Feed%20example.csv)",
         "properties": {
           "id": {
             "type": "string"
@@ -244,7 +244,7 @@
       },
       "RoomFeed": {
         "type": "object",
-        "description": "CSV / XML feed example columns for rooms",
+        "description": "CSV / XML feed example columns for rooms. [CSV example](https://raw.githubusercontent.com/ADchieve/pushpriceapi/refs/heads/main/Room%20Feed%20example.csv)",
         "properties": {
           "hotel_id": {
             "type": "string"
@@ -363,7 +363,7 @@
       },
       "PackageFeed": {
         "type": "object",
-        "description": "CSV / XML feed example columns for packages. The refundable states should only be set to yes/1 when a full refund is possible. The refundable_until_days indicates till how many days before arrival a full refund is possible. The refundable_until_time is the time on that day until which a full refund is possible",
+        "description": "CSV / XML feed example columns for packages. The refundable states should only be set to yes/1 when a full refund is possible. The refundable_until_days indicates till how many days before arrival a full refund is possible. The refundable_until_time is the time on that day until which a full refund is possible. [CSV example](https://raw.githubusercontent.com/ADchieve/pushpriceapi/refs/heads/main/Rate%20Plan%20Feed%20example.csv)",
         "properties": {
           "hotel_id": {
             "type": "string"
