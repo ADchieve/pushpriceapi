@@ -1,0 +1,5 @@
+﻿hotel_id,room_type_id,name_nl,name_en,name_de,description_nl,description_en,description_de,capacity,occupancy,image_url,number_of_beds,mobility_accessible,smoking,bath,shower,open_air_bath,air_conditioning,balcony
+hotel_1,,,Room A,,,,,,,,,,,,,,,
+hotel_1,,,Room B,,,,,,,,,,,,,,,
+hotel_1,,,Room C,,,,,,,,,,,,,,,
+hotel_2,,,Room A,,,,,,,,,,,,,,,

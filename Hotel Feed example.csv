@@ -1,0 +1,3 @@
+id,hotel_name,addr1,city,zipcode,region,country,phonenumber,phonetype,image_url,image_width,image_height,longitude,latitude,description,category,url
+101,Hotel A,,,,,,,main,,,,,,,,
+102,Hotel B,,,,,,,,,,,,,,,
