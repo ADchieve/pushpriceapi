@@ -1,412 +1,458 @@
-openapi: 3.0.3
-info:
-  title: Adchieve Hotel prices Push API
-  version: 1.0.0
-  description: >-
-    OpenAPI (Swagger) documentation for Adchieve's Prices API and description of the expected data format of the hotel, room and package feeds
-
- 
-servers:
-  - url: https://secure.adchieve.com/api
-    description: Production server (prices API)
-paths:
-  /hotel/setPrices/account/{accountId}:
-    post:
-      summary: Set prices and availability for multiple itineraries
-      description: >-
-        Accepts a JSON array of price/availability objects. Used to push prices
-        and availability:
-
-
-        - Send once initially and then whenever a price or availability changes.
-
-        - Multiple updates (max 1000) may be sent in a single request (recommended).
-
-
-        Example:
-        https://secure.adchieve.com/api/hotel/setPrices/account/<b>account_id</b>?apikey=<b>api key</b>. 
-        
-        
-        The API uses a path parameter `accountId` and query parameter `apikey`.
-        
-        
-        
-        Scenarios:
-        
-        
-        - A new hotel, room or package is added: send all available itinerary combinations
-        with the corresponding prices to Adchieve. Not available ones do not need to be
-        sent in this case to save bandwith
-        
-        
-        - A hotel, room or package becomes available: send all combinations that
-        became available to Adchieve with the corresponding prices
-        
-        
-        - A hotel, room or package becomes unavailable: send all combinations that
-        became unavailable to Adchieve with the corresponding prices
-        
-        
-        - There is a price change: send all combinations for which the price is changed
-        and that are available to Adchieve with the corresponding prices
-        
-      parameters:
-        - name: accountId
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Account id placeholder as shown in the example endpoint.
-        - name: apikey
-          in: query
-          required: true
-          schema:
-            type: string
-          description: API key (query parameter) used for authentication per PDF example.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/PriceUpdate'
-            examples:
-              single:
-                summary: Example payload with one itinerary update
-                value:
-                  - hotelId: '123'
-                    roomId: '456'
-                    packageId: 2DL
-                    arrivalDate: '2024-12-31'
-                    lengthOfStay: 3
-                    occupancy: 2
-                    basePrice: '123.45'
-                    taxes: '67.89'
-                    fees: '1.23'
-      responses:
-        '200':
-          description: Prices accepted (response body depends on implementation)
-        '400':
-          description: Bad request (validation error)
-        '401':
-          description: Unauthorized (invalid apikey)
-        '500':
-          description: Server error
-  /feeds/describe:
-    get:
-      summary: 'Documentation: Feeds (hotel / room / package)'
-      description: >-
-        <b>Not an actual API endpoint</b> - this path documents
-        the expected feed formats.
-
-
-        Three feeds to be delivered to Adchieve Adchieve. 
-        The feeds should be in csv or xml format
-        and are made available via a url. This url can be using the http(s) or ftp or sftp protocol.
-        
-        
-        Adchieve will call these urls once a day or once a week to retrieve these feeds every
-        day. If there is a preferred time that Adchieve should retrieve feeds you can let Adchieve
-        know.
-        All feeds always should contain the full list of hotels/rooms/packages, so they are not a
-        change since the last time it was sent.
-
-      responses:
-        '200':
-          description: Feed format description
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeedDescription'
-components:
-  schemas:
-    PriceUpdate:
-      type: object
-      required:
-        - hotelId
-        - roomId
-        - packageId
-        - arrivalDate
-        - lengthOfStay
-      properties:
-        hotelId:
-          type: string
-          description: The id of the hotel (matching the hotel feed)
-        roomId:
-          type: string
-          description: The id of the room (matching the room feed)
-        packageId:
-          type: string
-          description: The id of the package (matching the package feed)
-        arrivalDate:
-          type: string
-          format: date
-          description: Arrival date (yyyy-mm-dd)
-        lengthOfStay:
-          type: integer
-          description: Number of nights
-        occupancy:
-          type: integer
-          description: >-
-            Optional number of persons; if omitted price applies up to room
-            capacity
-        basePrice:
-          type: string
-          nullable: true
-          description: Base price as string with two decimals; null when unavailable
-        taxes:
-          type: string
-          nullable: true
-          description: Taxes as string with two decimals; null when unavailable or 0
-        fees:
-          type: string
-          nullable: true
-          description: >-
-            Fees (tourist tax etc.) as string with two decimals; null when
-            unavailable
-      example:
-        hotelId: '123'
-        roomId: '456'
-        packageId: 2DL
-        arrivalDate: '2024-05-01'
-        lengthOfStay: 3
-        occupancy: 2
-        basePrice: '123.45'
-        taxes: '67.89'
-        fees: '1.23'
-    FeedDescription:
-      type: object
-      properties:
-        hotelFeed:
-          $ref: '#/components/schemas/HotelFeed'
-        roomFeed:
-          $ref: '#/components/schemas/RoomFeed'
-        packageFeed:
-          $ref: '#/components/schemas/PackageFeed'
-        delivery:
-          type: string
-          example: >-
-            Feeds should be available via http(s), ftp or sftp; Adchieve will
-            call them once a day or week.
-    HotelFeed:
-      type: object
-      description: CSV / XML feed example columns for hotels
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        address:
-          type: string
-        city:
-          type: string
-        province:
-          type: string
-        postal_code:
-          type: string
-        country:
-          type: string
-        latitude:
-          type: number
-          format: double
-        longitude:
-          type: number
-          format: double
-      required:
-        - id
-        - name
-        - address
-        - city
-        - province
-        - postal_code
-        - country
-        - latitude
-        - longitude
-      example:
-        id: '123'
-        name: My first hotel
-        address: Straatnaam 7
-        city: Amsterdam
-        province: Limburg
-        postal_code: '12345'
-        country: Netherlands
-        latitude: 51.0802701
-        longitude: 5.3856508
-    RoomFeed:
-      type: object
-      description: CSV / XML feed example columns for rooms
-      properties:
-        hotel_id:
-          type: string
-        room_id:
-          type: string
-        name_nl:
-          type: string
-        description_nl:
-          type: string
-        photo_url:
-          type: string
-          format: uri
-        capacity:
-          type: integer
-        suite:
-          type: boolean
-          description: suite yes/no
-        capsule:
-          type: boolean
-          description: capsule yes/no
-        roomsharing:
-          type: boolean
-          description: roomsharing yes/no
-        mobilityAccessible:
-          type: boolean
-          description: mobilityAccessible yes/no
-        smoking:
-          type: boolean
-          description: smoking yes/no
-        bath:
-          type: boolean
-          description: bath yes/no
-        openAirBath:
-          type: boolean
-          description: openAirBath yes/no
-        airconditioning:
-          type: boolean
-          description: airconditioning yes/no
-        balcony:
-          type: boolean
-          description: balcony yes/no
-        view:
-          type: string 
-          nullable: true
-          description: Type of view available from the hotel room
-          enum:
-            - AirportView
-            - BayView
-            - BeachView
-            - CastleView
-            - CityView
-            - CountrysideView
-            - CourtyardView
-            - DuneView
-            - ForestView
-            - GardenView
-            - GolfCourseView
-            - HarborView
-            - LagoonView
-            - LakeView
-            - MarinaView
-            - MountainView
-            - NatureView
-            - OceanView
-            - ParkView
-            - PartialOceanView
-            - PisteView
-            - PoolView
-            - PyramidView
-            - RiverView
-            - StreetView
-      example:
-        hotel_id: '456'
-        room_id: '1'
-        name_nl: Comfort room
-        description_nl: ''
-        photo_url: https://hotelsite.com/image01.jpg
-        capacity: 2
-        suite: false
-        capsule: false
-        roomsharing: false
-        mobilityAccessible: true
-        smoking: false
-        bath: true
-        openAirBath: false
-        airconditioning: true
-        balcony: true
-        view: CityView
-      required:
-          - hotel_id
-          - room_name
-          - name_nl
-          - description_nl
-          - photo_url
-          - capacity
-    PackageFeed:
-      type: object
-      description: CSV / XML feed example columns for packages. The refundable states should only be set to yes/1 when a full refund is possible. The refundable_until_days indicates till how many days before arrival a full refund is possible. The refundable_until_time is the time on that day until which a full refund is possible
-      properties:
-        hotel_id:
-          type: string
-        package_id:
-          type: string
-        name_nl:
-          type: string
-        description_nl:
-          type: string
-        refundable:
-          type: integer
-          description: 0 or 1; 1 when full refund possible
-        refundable_until_days:
-          type: integer
-        refundable_until_time:
-          type: string
-          example: '10:00'
-    
-        # --- Optional Boolean Fields ---
-        internet_included:
-          type: boolean
-          description: Internet included (true = yes, false = no)
-          example: true
-        breakfast_included:
-          type: boolean
-          description: Breakfast included (true = yes, false = no)
-          example: false
-        dinner_included:
-          type: boolean
-          description: Dinner included (true = yes, false = no)
-          example: false
-        parking_included:
-          type: boolean
-          description: Parking included (true = yes, false = no)
-          example: true
-        car_rental_included:
-          type: boolean
-          description: Car rental included (true = yes, false = no)
-          example: false
-        airport_transportation_included:
-          type: boolean
-          description: Airport transportation included (true = yes, false = no)
-          example: false
-    
-        # --- Optional Time Fields ---
-        check_in_time:
-          type: string
-          description: Standard check-in time (HH:mm format)
-          example: '15:00'
-        check_out_time:
-          type: string
-          description: Standard check-out time (HH:mm format)
-          example: '11:00'
-    
-      required:
-        - hotel_id
-        - package_id
-        - name_nl
-        - description_nl
-    
-      example:
-        hotel_id: '456'
-        package_id: '2DL'
-        name_nl: Arrangement including breakfast
-        description_nl: ''
-        refundable: 0
-        refundable_until_days: null
-        refundable_until_time: null
-        internet_included: true
-        breakfast_included: true
-        dinner_included: false
-        parking_included: true
-        car_rental_included: false
-        airport_transportation_included: false
-        check_in_time: '15:00'
-        check_out_time: '11:00'
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Adchieve Hotel prices Push API",
+    "version": "1.0.0",
+    "description": "OpenAPI (Swagger) documentation for Adchieve's Prices API and description of the expected data format of the hotel, room and package feeds"
+  },
+  "servers": [
+    {
+      "url": "https://secure.adchieve.com/api",
+      "description": "Production server (prices API)"
+    }
+  ],
+  "paths": {
+    "/hotel/setPrices/account/{accountId}": {
+      "post": {
+        "summary": "Set prices and availability for multiple itineraries",
+        "description": "Accepts a JSON array of price/availability objects. Used to push prices and availability:\n\n- Send once initially and then whenever a price or availability changes.\n- Multiple updates (max 1000) may be sent in a single request (recommended).\n\nExample: https://secure.adchieve.com/api/hotel/setPrices/account/<b>account_id</b>?apikey=<b>api key</b>. \n\nThe API uses a path parameter `accountId` and query parameter `apikey`.\n\n\nScenarios:\n\n- A new hotel, room or package is added: send all available itinerary combinations with the corresponding prices to Adchieve. Not available ones do not need to be sent in this case to save bandwith\n\n- A hotel, room or package becomes available: send all combinations that became available to Adchieve with the corresponding prices\n\n- A hotel, room or package becomes unavailable: send all combinations that became unavailable to Adchieve with the corresponding prices\n\n- There is a price change: send all combinations for which the price is changed and that are available to Adchieve with the corresponding prices",
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Account id placeholder as shown in the example endpoint."
+          },
+          {
+            "name": "apikey",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "API key (query parameter) used for authentication per PDF example."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PriceUpdate"
+                }
+              },
+              "examples": {
+                "single": {
+                  "summary": "Example payload with one itinerary update",
+                  "value": [
+                    {
+                      "hotelId": "123",
+                      "roomId": "456",
+                      "packageId": "2DL",
+                      "arrivalDate": "2024-12-31",
+                      "lengthOfStay": 3,
+                      "occupancy": 2,
+                      "basePrice": "123.45",
+                      "taxes": "67.89",
+                      "fees": "1.23"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Prices accepted (response body depends on implementation)"
+          },
+          "400": {
+            "description": "Bad request (validation error)"
+          },
+          "401": {
+            "description": "Unauthorized (invalid apikey)"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/feeds/describe": {
+      "get": {
+        "summary": "Documentation: Feeds (hotel / room / package)",
+        "description": "<b>Not an actual API endpoint</b> - this path documents the expected feed formats.\n\nThree feeds to be delivered to Adchieve Adchieve.  The feeds should be in csv or xml format and are made available via a url. This url can be using the http(s) or ftp or sftp protocol.\n\nAdchieve will call these urls once a day or once a week to retrieve these feeds every day. If there is a preferred time that Adchieve should retrieve feeds you can let Adchieve know. All feeds always should contain the full list of hotels/rooms/packages, so they are not a change since the last time it was sent.",
+        "responses": {
+          "200": {
+            "description": "Feed format description",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedDescription"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PriceUpdate": {
+        "type": "object",
+        "required": [
+          "hotelId",
+          "roomId",
+          "packageId",
+          "arrivalDate",
+          "lengthOfStay"
+        ],
+        "properties": {
+          "hotelId": {
+            "type": "string",
+            "description": "The id of the hotel (matching the hotel feed)"
+          },
+          "roomId": {
+            "type": "string",
+            "description": "The id of the room (matching the room feed)"
+          },
+          "packageId": {
+            "type": "string",
+            "description": "The id of the package (matching the package feed)"
+          },
+          "arrivalDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Arrival date (yyyy-mm-dd)"
+          },
+          "lengthOfStay": {
+            "type": "integer",
+            "description": "Number of nights"
+          },
+          "occupancy": {
+            "type": "integer",
+            "description": "Optional number of persons; if omitted price applies up to room capacity"
+          },
+          "basePrice": {
+            "type": "string",
+            "nullable": true,
+            "description": "Base price as string with two decimals; null when unavailable"
+          },
+          "taxes": {
+            "type": "string",
+            "nullable": true,
+            "description": "Taxes as string with two decimals; null when unavailable or 0"
+          },
+          "fees": {
+            "type": "string",
+            "nullable": true,
+            "description": "Fees (tourist tax etc.) as string with two decimals; null when unavailable"
+          }
+        },
+        "example": {
+          "hotelId": "123",
+          "roomId": "456",
+          "packageId": "2DL",
+          "arrivalDate": "2024-05-01",
+          "lengthOfStay": 3,
+          "occupancy": 2,
+          "basePrice": "123.45",
+          "taxes": "67.89",
+          "fees": "1.23"
+        }
+      },
+      "FeedDescription": {
+        "type": "object",
+        "properties": {
+          "hotelFeed": {
+            "$ref": "#/components/schemas/HotelFeed"
+          },
+          "roomFeed": {
+            "$ref": "#/components/schemas/RoomFeed"
+          },
+          "packageFeed": {
+            "$ref": "#/components/schemas/PackageFeed"
+          },
+          "delivery": {
+            "type": "string",
+            "example": "Feeds should be available via http(s), ftp or sftp; Adchieve will call them once a day or week."
+          }
+        }
+      },
+      "HotelFeed": {
+        "type": "object",
+        "description": "CSV / XML feed example columns for hotels",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "province": {
+            "type": "string"
+          },
+          "postal_code": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "address",
+          "city",
+          "province",
+          "postal_code",
+          "country",
+          "latitude",
+          "longitude"
+        ],
+        "example": {
+          "id": "123",
+          "name": "My first hotel",
+          "address": "Straatnaam 7",
+          "city": "Amsterdam",
+          "province": "Limburg",
+          "postal_code": "12345",
+          "country": "Netherlands",
+          "latitude": 51.0802701,
+          "longitude": 5.3856508
+        }
+      },
+      "RoomFeed": {
+        "type": "object",
+        "description": "CSV / XML feed example columns for rooms",
+        "properties": {
+          "hotel_id": {
+            "type": "string"
+          },
+          "room_id": {
+            "type": "string"
+          },
+          "name_nl": {
+            "type": "string"
+          },
+          "description_nl": {
+            "type": "string"
+          },
+          "photo_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "capacity": {
+            "type": "integer"
+          },
+          "suite": {
+            "type": "boolean",
+            "description": "suite yes/no"
+          },
+          "capsule": {
+            "type": "boolean",
+            "description": "capsule yes/no"
+          },
+          "roomsharing": {
+            "type": "boolean",
+            "description": "roomsharing yes/no"
+          },
+          "mobilityAccessible": {
+            "type": "boolean",
+            "description": "mobilityAccessible yes/no"
+          },
+          "smoking": {
+            "type": "boolean",
+            "description": "smoking yes/no"
+          },
+          "bath": {
+            "type": "boolean",
+            "description": "bath yes/no"
+          },
+          "openAirBath": {
+            "type": "boolean",
+            "description": "openAirBath yes/no"
+          },
+          "airconditioning": {
+            "type": "boolean",
+            "description": "airconditioning yes/no"
+          },
+          "balcony": {
+            "type": "boolean",
+            "description": "balcony yes/no"
+          },
+          "view": {
+            "type": "string",
+            "nullable": true,
+            "description": "Type of view available from the hotel room",
+            "enum": [
+              "AirportView",
+              "BayView",
+              "BeachView",
+              "CastleView",
+              "CityView",
+              "CountrysideView",
+              "CourtyardView",
+              "DuneView",
+              "ForestView",
+              "GardenView",
+              "GolfCourseView",
+              "HarborView",
+              "LagoonView",
+              "LakeView",
+              "MarinaView",
+              "MountainView",
+              "NatureView",
+              "OceanView",
+              "ParkView",
+              "PartialOceanView",
+              "PisteView",
+              "PoolView",
+              "PyramidView",
+              "RiverView",
+              "StreetView"
+            ]
+          }
+        },
+        "example": {
+          "hotel_id": "456",
+          "room_id": "1",
+          "name_nl": "Comfort room",
+          "description_nl": "",
+          "photo_url": "https://hotelsite.com/image01.jpg",
+          "capacity": 2,
+          "suite": false,
+          "capsule": false,
+          "roomsharing": false,
+          "mobilityAccessible": true,
+          "smoking": false,
+          "bath": true,
+          "openAirBath": false,
+          "airconditioning": true,
+          "balcony": true,
+          "view": "CityView"
+        },
+        "required": [
+          "hotel_id",
+          "room_name",
+          "name_nl",
+          "description_nl",
+          "photo_url",
+          "capacity"
+        ]
+      },
+      "PackageFeed": {
+        "type": "object",
+        "description": "CSV / XML feed example columns for packages. The refundable states should only be set to yes/1 when a full refund is possible. The refundable_until_days indicates till how many days before arrival a full refund is possible. The refundable_until_time is the time on that day until which a full refund is possible",
+        "properties": {
+          "hotel_id": {
+            "type": "string"
+          },
+          "package_id": {
+            "type": "string"
+          },
+          "name_nl": {
+            "type": "string"
+          },
+          "description_nl": {
+            "type": "string"
+          },
+          "refundable": {
+            "type": "integer",
+            "description": "0 or 1; 1 when full refund possible"
+          },
+          "refundable_until_days": {
+            "type": "integer"
+          },
+          "refundable_until_time": {
+            "type": "string",
+            "example": "10:00"
+          },
+          "internet_included": {
+            "type": "boolean",
+            "description": "Internet included (true = yes, false = no)",
+            "example": true
+          },
+          "breakfast_included": {
+            "type": "boolean",
+            "description": "Breakfast included (true = yes, false = no)",
+            "example": false
+          },
+          "dinner_included": {
+            "type": "boolean",
+            "description": "Dinner included (true = yes, false = no)",
+            "example": false
+          },
+          "parking_included": {
+            "type": "boolean",
+            "description": "Parking included (true = yes, false = no)",
+            "example": true
+          },
+          "car_rental_included": {
+            "type": "boolean",
+            "description": "Car rental included (true = yes, false = no)",
+            "example": false
+          },
+          "airport_transportation_included": {
+            "type": "boolean",
+            "description": "Airport transportation included (true = yes, false = no)",
+            "example": false
+          },
+          "check_in_time": {
+            "type": "string",
+            "description": "Standard check-in time (HH:mm format)",
+            "example": "15:00"
+          },
+          "check_out_time": {
+            "type": "string",
+            "description": "Standard check-out time (HH:mm format)",
+            "example": "11:00"
+          }
+        },
+        "required": [
+          "hotel_id",
+          "package_id",
+          "name_nl",
+          "description_nl"
+        ],
+        "example": {
+          "hotel_id": "456",
+          "package_id": "2DL",
+          "name_nl": "Arrangement including breakfast",
+          "description_nl": "",
+          "refundable": 0,
+          "refundable_until_days": null,
+          "refundable_until_time": null,
+          "internet_included": true,
+          "breakfast_included": true,
+          "dinner_included": false,
+          "parking_included": true,
+          "car_rental_included": false,
+          "airport_transportation_included": false,
+          "check_in_time": "15:00",
+          "check_out_time": "11:00"
+        }
+      }
+    }
+  }
+}
